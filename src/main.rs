@@ -3,6 +3,7 @@ extern crate serialize;
 
 use std::path::Path;
 use std::os;
+use std::collections::TreeMap;
 
 const SPLIT_BY_FIELD : &'static str = "Email";
 const RECORDS_PER_FILE: uint = 1000;
@@ -18,33 +19,37 @@ fn main() {
 
     let headers = reader.headers().unwrap();
     let split_record_index = headers.iter().position(|header| header.as_slice() == SPLIT_BY_FIELD).expect("Can't find split_by_field field");
-    let mut sorted_record = vec!();
+    let mut sorted_record : TreeMap<String, Vec<Vec<String>>> = TreeMap::new();
 
     println!("Loading...");
     for record in reader.records() {
         let record = record.unwrap();
-        sorted_record.push(record);
+        let split_field_value = record[split_record_index].clone();
+        if sorted_record.contains_key(&split_field_value){
+            sorted_record.index_mut(&split_field_value).push(record);
+        }else{
+            sorted_record.insert(split_field_value, vec!(record));
+        }
     }
 
-    println!("Sorting...");
-    sorted_record.sort_by(|rec1, rec2| rec1[split_record_index].cmp(&rec2[split_record_index]));
-    println!("Sorted, writing...");
-
+    println!("Writing...");
     let mut current_file_records = 0u;
     let mut file_number = 0u;
-    let mut last_split_field_value = "".to_string();
+    let mut records_count = 0u;
     let mut writer = csv::Writer::from_file(&Path::new(format!("{}-p{}.csv", csv_file_name, file_number))).delimiter(b'|');
     writer.encode(headers).unwrap();
 
-    for record in sorted_record.iter() {
-        if (current_file_records >= RECORDS_PER_FILE) && (last_split_field_value != record[split_record_index]) {
+    for record_set in sorted_record.values() {
+        if current_file_records >= RECORDS_PER_FILE {
             file_number += 1;
             current_file_records = 0;
             writer = csv::Writer::from_file(&Path::new(format!("{}-p{}.csv", csv_file_name, file_number))).delimiter(b'|');
         }
-        last_split_field_value = record[split_record_index].clone();
-        writer.encode(record).unwrap();
-        current_file_records += 1;
+        for record in record_set.iter(){
+            writer.encode(record).unwrap();
+            current_file_records += 1;
+            records_count += 1;
+        }
     }
-    println!("Total records: {}. Files created: {}.", sorted_record.len(), file_number+1);
+    println!("Total records: {}. Total uniq emails: {}. Files created: {}", records_count, sorted_record.len(), file_number+1);
 }
