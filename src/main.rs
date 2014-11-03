@@ -42,5 +42,5 @@ fn main() {
         writer.encode(record).unwrap();
         current_file_records += 1;
     }
-    println!("Total records: {}. Files created: {}", sorted_record.len(), current_file_records+1);
+    println!("Total records: {}. Files created: {}", sorted_record.len(), file_number+1);
 }
