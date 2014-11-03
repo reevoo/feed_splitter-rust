@@ -1,0 +1,9 @@
+[package]
+
+name = "feed_splitter-rust"
+version = "0.0.1"
+authors = ["Andrii Dmytrenko <andrey@reevoo.com>"]
+
+[dependencies.rust-csv]
+version = "0.5.0"
+git = "git://github.com/BurntSushi/rust-csv"
