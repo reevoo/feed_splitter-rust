@@ -14,7 +14,7 @@ fn main() {
 
     let headers = rdr.headers().unwrap();
     let split_record_index = headers.iter().position(|header| header.as_slice() == SPLIT_BY_FIELD).expect("Can't find split_by_field field");
-    let mut sorted_record = Vec::with_capacity(400000);
+    let mut sorted_record = vec!();
 
     println!("Loading...");
     for record in rdr.records() {
@@ -42,5 +42,5 @@ fn main() {
         writer.encode(record).unwrap();
         current_file_records += 1;
     }
-    println!("Total records: {}. Files created: {}", sorted_record.len(), file_number+1);
+    println!("Total records: {}. Files created: {}.", sorted_record.len(), file_number+1);
 }
