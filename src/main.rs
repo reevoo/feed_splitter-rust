@@ -34,13 +34,14 @@ fn main() {
     let mut file_number = 0u;
     let mut last_split_field_value = "".to_string();
     let mut writer = csv::Writer::from_file(&Path::new(format!("{}-p{}.csv", csv_file_name, file_number))).delimiter(b'|');
-    writer.encode(headers).unwrap();
+    writer.encode(headers.clone()).unwrap();
 
     for record in sorted_record.iter() {
         if (current_file_records >= RECORDS_PER_FILE) && (last_split_field_value != record[split_record_index]) {
             file_number += 1;
             current_file_records = 0;
             writer = csv::Writer::from_file(&Path::new(format!("{}-p{}.csv", csv_file_name, file_number))).delimiter(b'|');
+            writer.encode(headers.clone()).unwrap();
         }
         last_split_field_value = record[split_record_index].clone();
         writer.encode(record).unwrap();
