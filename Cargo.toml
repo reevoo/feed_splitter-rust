@@ -1,7 +1,7 @@
 [package]
 
 name = "feed_splitter-rust"
-version = "0.0.1"
+version = "1.0.1"
 authors = ["Andrii Dmytrenko <andrey@reevoo.com>"]
 
 [dependencies.rust-csv]
