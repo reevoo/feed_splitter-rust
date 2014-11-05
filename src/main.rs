@@ -60,3 +60,45 @@ fn main() {
     let stats = split_file(&Path::new(csv_file_name), SPLIT_BY_FIELD, RECORDS_PER_FILE);
     info!("{}", stats);
 }
+
+#[cfg(test)]
+mod test{
+    use std::io::fs::{File, mkdir, rmdir_recursive};
+    use std::io;
+    use std::io::fs::PathExtensions;
+    #[test]
+    fn test_split_file(){
+let data = "f1|f2|f3
+a|b|c
+a25|b3|c25
+a26|b3|c26
+a1|b5|c1
+a2|b6|c2
+a3|b7|c3
+a4|b5|c4
+a5|b3|c5
+a6|b6|c6
+a7|b1|c7
+a8|b2|c8
+a9|b3|c9
+";
+        mkdir(&Path::new("tmp_test"), io::USER_RWX);
+        let tmp_csv = Path::new("tmp_test/tmp_test.csv");
+        {
+            let mut f = File::create(&tmp_csv);
+            f.write_str(data).unwrap();
+        }
+        ::split_file(&tmp_csv, "f2", 2);
+        assert!(&Path::new("tmp_test/tmp_test.csv-p0.csv").exists());
+        assert!(&Path::new("tmp_test/tmp_test.csv-p1.csv").exists());
+        assert!(&Path::new("tmp_test/tmp_test.csv-p2.csv").exists());
+        assert!(&Path::new("tmp_test/tmp_test.csv-p3.csv").exists());
+        assert!(&Path::new("tmp_test/tmp_test.csv-p4.csv").exists());
+        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p0.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na|b|c\na7|b1|c7\n")
+        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p1.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na8|b2|c8\na25|b3|c25\na26|b3|c26\na5|b3|c5\na9|b3|c9\n")
+        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p2.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na1|b5|c1\na4|b5|c4\n")
+        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p3.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na2|b6|c2\na6|b6|c6\n")
+        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p4.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na3|b7|c3\n")
+        rmdir_recursive(&Path::new("tmp_test"));
+    }
+}
