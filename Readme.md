@@ -12,3 +12,8 @@
 	```
 	./target/release/feed_splitter-rust  path_to_csv_file
 	```
+
+To see the log output run with:
+	```
+	RUST_LOG=info feed_splitter-rust
+	```
