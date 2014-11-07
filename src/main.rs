@@ -125,7 +125,7 @@ mod test{
 
     #[test]
     fn test_split_file(){
-let data = "f1|f2|f3
+        let data = "f1|f2|f3
 a|b|c
 a25|b3|c25
 a26|b3|c26
@@ -146,11 +146,11 @@ a9|b3|c9
             f.write_str(data).unwrap();
         }
         ::split_file(&tmp_csv, "f2", 2);
-        assert!(&Path::new("tmp_test/tmp_test.csv-p0.csv").exists());
-        assert!(&Path::new("tmp_test/tmp_test.csv-p1.csv").exists());
-        assert!(&Path::new("tmp_test/tmp_test.csv-p2.csv").exists());
-        assert!(&Path::new("tmp_test/tmp_test.csv-p3.csv").exists());
-        assert!(&Path::new("tmp_test/tmp_test.csv-p4.csv").exists());
+        assert!(Path::new("tmp_test/tmp_test.csv-p0.csv").exists());
+        assert!(Path::new("tmp_test/tmp_test.csv-p1.csv").exists());
+        assert!(Path::new("tmp_test/tmp_test.csv-p2.csv").exists());
+        assert!(Path::new("tmp_test/tmp_test.csv-p3.csv").exists());
+        assert!(Path::new("tmp_test/tmp_test.csv-p4.csv").exists());
         assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p0.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na|b|c\na7|b1|c7\n")
         assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p1.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na8|b2|c8\na25|b3|c25\na26|b3|c26\na5|b3|c5\na9|b3|c9\n")
         assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p2.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na1|b5|c1\na4|b5|c4\n")
