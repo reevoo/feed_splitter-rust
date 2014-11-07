@@ -8,7 +8,9 @@ extern crate serialize;
 use std::path::Path;
 use std::os;
 
+#[allow(dead_code)]
 const SPLIT_BY_FIELD : &'static str = "Email";
+#[allow(dead_code)]
 const RECORDS_PER_FILE: uint = 1000;
 
 #[deriving(Show)]
@@ -65,6 +67,7 @@ fn split_file(csv_file_path: &Path, split_by_field: &str, records_per_file: uint
     Stats { total_records: total_records, number_of_files: file_number+1 }
 }
 
+#[allow(dead_code)]
 fn main() {
     let args = os::args();
     if args.len() < 2{
@@ -139,7 +142,7 @@ a7|b1|c7
 a8|b2|c8
 a9|b3|c9
 ";
-        mkdir(&Path::new("tmp_test"), io::USER_RWX);
+        mkdir(&Path::new("tmp_test"), io::USER_RWX).unwrap();
         let tmp_csv = Path::new("tmp_test/tmp_test.csv");
         {
             let mut f = File::create(&tmp_csv);
