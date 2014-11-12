@@ -2,18 +2,18 @@
 
 extern crate csv;
 extern crate serialize;
+extern crate getopts;
 #[phase(plugin, link)] extern crate log;
 
 
 use std::path::Path;
-use std::os;
+use std::{os, io};
 use std::io::File;
+use getopts::{optopt,getopts, usage, reqopt, OptGroup};
+use std::ascii::AsciiExt;
 
-#[allow(dead_code)]
-const SPLIT_BY_FIELD : &'static str = "Email";
 #[allow(dead_code)]
 const RECORDS_PER_FILE: uint = 1000;
-
 const DELIMETERS: [u8, ..3] = [b'|', b';', b'\t'];
 
 #[deriving(Show)]
@@ -22,8 +22,8 @@ struct Stats {
     number_of_files: uint,
 }
 
-enum SplitByField <'a > {
-    FieldName(&'a str),
+enum SplitByField {
+    FieldName(String),
     FieldIndex(uint)
 }
 
@@ -39,7 +39,7 @@ fn detect_delimiter(data: &[u8]) -> u8 {
 }
 
 fn detect_csv_file_delimiter(path: &Path) -> u8{
-    let mut f = File::open(path).unwrap();
+    let mut f = File::open(path).ok().expect("Can't open file");
     // A bit tricky code: we're allocating buf on the stack here.
     let mut buf : [u8, ..100] = unsafe {::std::mem::zeroed()};
     let read_bytes = f.read_at_least(100, buf).unwrap(); //trying to read 100 bytes to the buf.
@@ -48,7 +48,7 @@ fn detect_csv_file_delimiter(path: &Path) -> u8{
     delimiter
 }
 
-fn split_records<T: Clone + PartialEq + Ord>(mut records: Vec<Vec<T>>, records_per_file: uint, split_record_index: uint) -> Vec<Vec<Vec<T>>> {
+fn split_records<T: Clone + Ord>(mut records: Vec<Vec<T>>, records_per_file: uint, split_record_index: uint) -> Vec<Vec<Vec<T>>> {
     let mut splitted_records = vec!();
     let mut current_vec = vec!();
     let mut current_file_records = 0u;
@@ -74,10 +74,19 @@ fn split_file(csv_file_path: &Path, split_by_field: SplitByField, records_per_fi
     let csv_file_name = csv_file_path.as_str().unwrap();
     let mut reader = csv::Reader::from_file(csv_file_path).delimiter(delimiter);
 
-    let headers = reader.headers().unwrap();
+    let mut headers = None;
     let split_record_index = match split_by_field {
-        FieldName(field_name) => headers.iter().position(|header| header.as_slice() == field_name).expect("Can't find split_by_field field"),
-        FieldIndex(idx) => idx
+        FieldName(field_name) => {
+            let lower_field_name = field_name.to_ascii_lower();
+            let headers_tmp = reader.headers().ok().expect("Can't read headers");
+            let pos =  headers_tmp.iter().position(|header| header.to_ascii_lower() == lower_field_name).expect(format!("Can't find header '{}' in the file", field_name).as_slice());
+            headers  = Some(headers_tmp);
+            pos
+        },
+        FieldIndex(idx) => {
+            reader = reader.has_headers(false);
+            idx
+        }
     };
 
     info!("Loading...");
@@ -90,7 +99,9 @@ fn split_file(csv_file_path: &Path, split_by_field: SplitByField, records_per_fi
     let mut file_number = 0u;
     for records_set in splitted_records.into_iter() {
         let mut writer = csv::Writer::from_file(&Path::new(format!("{}-p{}.csv", csv_file_name, file_number))).delimiter(delimiter);
-        writer.encode(headers.clone()).unwrap();
+        if headers.is_some(){
+            writer.encode(headers.clone()).unwrap();
+        }
         for record in records_set.into_iter() {
             writer.write_bytes(record.into_iter()).unwrap();
         }
@@ -99,16 +110,47 @@ fn split_file(csv_file_path: &Path, split_by_field: SplitByField, records_per_fi
     Stats { total_records: total_records, number_of_files: file_number+1 }
 }
 
+fn print_usage(opts: &[OptGroup]){
+    let mut stderr = io::stderr();
+    stderr.write_line(usage("feed_splitter-rust [OPTIONS] CSV_FILE", opts).as_slice()).unwrap();
+}
+
 #[allow(dead_code)]
 fn main() {
     let args = os::args();
-    if args.len() < 2 {
-        panic!("usage: {} CSV_FILE_PATH", args[0]);
-    }
-    let csv_file_name = os::args()[1].clone();
+
+    let opts = [
+        optopt("i", "index", "use column index", "INDEX"),
+        optopt("c", "column", "use column name", "NAME"),
+        reqopt("f", "file", "csv file", "FILE")
+    ];
+
+    let matches = match getopts(args.tail(), opts) {
+        Ok(m) => m,
+        Err(f) => {
+            print_usage(opts);
+            panic!(f.to_string())
+        }
+    };
+
+    let csv_file_name = matches.opt_str("f").unwrap();
+
+    let split_field = match (matches.opt_present("i"), matches.opt_present("c")) {
+        (true, true) | (false, false) => {
+            print_usage(opts);
+            panic!("Please provide either -c or -i");
+        },
+        (true, _) => {
+            FieldIndex(from_str(matches.opt_str("i").unwrap().as_slice()).unwrap())
+        },
+        (_, true) => {
+            FieldName(matches.opt_str("c").unwrap())
+        }
+    };
+
     let csv_file_path = &Path::new(csv_file_name);
     let delimiter = detect_csv_file_delimiter(csv_file_path);
-    let stats = split_file(csv_file_path, FieldName(SPLIT_BY_FIELD), RECORDS_PER_FILE, delimiter);
+    let stats = split_file(csv_file_path, split_field, RECORDS_PER_FILE, delimiter);
     info!("{}", stats);
 }
 
@@ -194,7 +236,7 @@ a9|b3|c9
         }
         let delimiter = ::detect_csv_file_delimiter(&tmp_csv);
         assert_eq!(delimiter, b'|');
-        ::split_file(&tmp_csv, ::FieldName("f2"), 2, delimiter);
+        ::split_file(&tmp_csv, ::FieldName("f2".to_string()), 2, delimiter);
         assert!(Path::new("tmp_test/tmp_test.csv-p0.csv").exists());
         assert!(Path::new("tmp_test/tmp_test.csv-p1.csv").exists());
         assert!(Path::new("tmp_test/tmp_test.csv-p2.csv").exists());
