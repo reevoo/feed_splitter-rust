@@ -22,6 +22,11 @@ struct Stats {
     number_of_files: uint,
 }
 
+enum SplitByField <'a > {
+    FieldName(&'a str),
+    FieldIndex(uint)
+}
+
 // Simple algorithm, copying what we have in ruby right now.
 fn detect_delimiter(data: &[u8]) -> u8 {
     let mut delimiters_frequency : Vec<(u8, uint)> = DELIMETERS.iter().map(|&del| (del, data.iter().filter(|&&x| x == del).count())).collect();
@@ -43,7 +48,7 @@ fn detect_csv_file_delimiter(path: &Path) -> u8{
     delimiter
 }
 
-fn split_records<'a, T: Clone + PartialEq + Ord>(mut records: Vec<Vec<T>>, records_per_file: uint, split_record_index: uint) -> Vec<Vec<Vec<T>>> {
+fn split_records<T: Clone + PartialEq + Ord>(mut records: Vec<Vec<T>>, records_per_file: uint, split_record_index: uint) -> Vec<Vec<Vec<T>>> {
     let mut splitted_records = vec!();
     let mut current_vec = vec!();
     let mut current_file_records = 0u;
@@ -65,12 +70,15 @@ fn split_records<'a, T: Clone + PartialEq + Ord>(mut records: Vec<Vec<T>>, recor
     splitted_records
 }
 
-fn split_file(csv_file_path: &Path, split_by_field: &str, records_per_file: uint, delimiter: u8) -> Stats {
+fn split_file(csv_file_path: &Path, split_by_field: SplitByField, records_per_file: uint, delimiter: u8) -> Stats {
     let csv_file_name = csv_file_path.as_str().unwrap();
     let mut reader = csv::Reader::from_file(csv_file_path).delimiter(delimiter);
 
     let headers = reader.headers().unwrap();
-    let split_record_index = headers.iter().position(|header| header.as_slice() == split_by_field).expect("Can't find split_by_field field");
+    let split_record_index = match split_by_field {
+        FieldName(field_name) => headers.iter().position(|header| header.as_slice() == field_name).expect("Can't find split_by_field field"),
+        FieldIndex(idx) => idx
+    };
 
     info!("Loading...");
     let records : Vec<Vec<_>> = reader.byte_records().map(|record| record.unwrap()).collect();
@@ -100,7 +108,7 @@ fn main() {
     let csv_file_name = os::args()[1].clone();
     let csv_file_path = &Path::new(csv_file_name);
     let delimiter = detect_csv_file_delimiter(csv_file_path);
-    let stats = split_file(csv_file_path, SPLIT_BY_FIELD, RECORDS_PER_FILE, delimiter);
+    let stats = split_file(csv_file_path, FieldName(SPLIT_BY_FIELD), RECORDS_PER_FILE, delimiter);
     info!("{}", stats);
 }
 
@@ -186,7 +194,7 @@ a9|b3|c9
         }
         let delimiter = ::detect_csv_file_delimiter(&tmp_csv);
         assert_eq!(delimiter, b'|');
-        ::split_file(&tmp_csv, "f2", 2, delimiter);
+        ::split_file(&tmp_csv, ::FieldName("f2"), 2, delimiter);
         assert!(Path::new("tmp_test/tmp_test.csv-p0.csv").exists());
         assert!(Path::new("tmp_test/tmp_test.csv-p1.csv").exists());
         assert!(Path::new("tmp_test/tmp_test.csv-p2.csv").exists());
