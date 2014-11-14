@@ -7,7 +7,7 @@ extern crate getopts;
 
 
 use std::path::Path;
-use std::{os, io};
+use std::os;
 use std::io::File;
 use getopts::{optopt,getopts, usage, reqopt, OptGroup};
 use std::ascii::AsciiExt;
@@ -111,8 +111,7 @@ fn split_file(csv_file_path: &Path, split_by_field: SplitByField, records_per_fi
 }
 
 fn print_usage(opts: &[OptGroup]){
-    let mut stderr = io::stderr();
-    stderr.write_line(usage("feed_splitter-rust [OPTIONS] CSV_FILE", opts).as_slice()).unwrap();
+    println!("{}", usage("feed_splitter-rust [OPTIONS] CSV_FILE", opts));
 }
 
 #[allow(dead_code)]
