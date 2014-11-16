@@ -212,20 +212,19 @@ mod test{
     #[test]
     #[allow(unused_must_use)]
     fn test_split_file(){
-        let data = "f1|f2|f3
-a|b|c
-a25|b3|c25
-a26|b3|c26
-a1|b5|c1
-a2|b6|c2
-a3|b7|c3
-a4|b5|c4
-a5|b3|c5
-a6|b6|c6
-a7|b1|c7
-a8|b2|c8
-a9|b3|c9
-";
+        let data = "f1|f2|f3\n\
+                    a|b|c\n\
+                    a25|b3|c25\n\
+                    a26|b3|c26\n\
+                    a1|b5|c1\n\
+                    a2|b6|c2\n\
+                    a3|b7|c3\n\
+                    a4|b5|c4\n\
+                    a5|b3|c5\n\
+                    a6|b6|c6\n\
+                    a7|b1|c7\n\
+                    a8|b2|c8\n\
+                    a9|b3|c9\n";
         rmdir_recursive(&Path::new("tmp_test"));
         mkdir(&Path::new("tmp_test"), io::USER_RWX).unwrap();
         let tmp_csv = Path::new("tmp_test/tmp_test.csv");
