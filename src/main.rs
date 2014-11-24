@@ -42,7 +42,7 @@ fn detect_csv_file_delimiter(path: &Path) -> u8{
     let mut f = File::open(path).ok().expect("Can't open file");
     // A bit tricky code: we're allocating buf on the stack here.
     let mut buf : [u8, ..100] = unsafe {::std::mem::zeroed()};
-    let read_bytes = f.read_at_least(100, buf).unwrap(); //trying to read 100 bytes to the buf.
+    let read_bytes = f.read_at_least(100, &mut buf).unwrap(); //trying to read 100 bytes to the buf.
     let delimiter = detect_delimiter(buf.slice_to(read_bytes)); //slicing the actual number of bytes read.
     info!("Detected delimiter: 0x{:x}", delimiter);
     delimiter
@@ -76,14 +76,14 @@ fn split_file(csv_file_path: &Path, split_by_field: SplitByField, records_per_fi
 
     let mut headers = None;
     let split_record_index = match split_by_field {
-        FieldName(field_name) => {
+        SplitByField::FieldName(field_name) => {
             let lower_field_name = field_name.to_ascii_lower();
             let headers_tmp = reader.headers().ok().expect("Can't read headers");
             let pos =  headers_tmp.iter().position(|header| header.to_ascii_lower() == lower_field_name).expect(format!("Can't find header '{}' in the file", field_name).as_slice());
             headers  = Some(headers_tmp);
             pos
         },
-        FieldIndex(idx) => {
+        SplitByField::FieldIndex(idx) => {
             reader = reader.has_headers(false);
             idx
         }
@@ -124,10 +124,10 @@ fn main() {
         reqopt("f", "file", "csv file", "FILE")
     ];
 
-    let matches = match getopts(args.tail(), opts) {
+    let matches = match getopts(args.tail(), &opts) {
         Ok(m) => m,
         Err(f) => {
-            print_usage(opts);
+            print_usage(&opts);
             panic!(f.to_string())
         }
     };
@@ -136,14 +136,14 @@ fn main() {
 
     let split_field = match (matches.opt_present("i"), matches.opt_present("c")) {
         (true, true) | (false, false) => {
-            print_usage(opts);
+            print_usage(&opts);
             panic!("Please provide either -c or -i");
         },
         (true, _) => {
-            FieldIndex(from_str(matches.opt_str("i").unwrap().as_slice()).unwrap())
+            SplitByField::FieldIndex(from_str(matches.opt_str("i").unwrap().as_slice()).unwrap())
         },
         (_, true) => {
-            FieldName(matches.opt_str("c").unwrap())
+            SplitByField::FieldName(matches.opt_str("c").unwrap())
         }
     };
 
@@ -234,7 +234,7 @@ mod test{
         }
         let delimiter = ::detect_csv_file_delimiter(&tmp_csv);
         assert_eq!(delimiter, b'|');
-        ::split_file(&tmp_csv, ::FieldName("f2".to_string()), 2, delimiter);
+        ::split_file(&tmp_csv, ::SplitByField::FieldName("f2".to_string()), 2, delimiter);
         assert!(Path::new("tmp_test/tmp_test.csv-p0.csv").exists());
         assert!(Path::new("tmp_test/tmp_test.csv-p1.csv").exists());
         assert!(Path::new("tmp_test/tmp_test.csv-p2.csv").exists());
