@@ -31,8 +31,8 @@ enum SplitByField {
 fn detect_delimiter(data: &[u8]) -> u8 {
     let mut delimiters_frequency : Vec<(u8, uint)> = DELIMETERS.iter().map(|&del| (del, data.iter().filter(|&&x| x == del).count())).collect();
     delimiters_frequency.sort_by(|&(_, count), &(_, count2)| count2.cmp(&count));
-    if delimiters_frequency[0].val1() > 2 {
-        delimiters_frequency[0].val0()
+    if delimiters_frequency[0].1 > 2 {
+        delimiters_frequency[0].0
     }else{
         b','
     }
