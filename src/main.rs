@@ -103,7 +103,7 @@ fn split_file(csv_file_path: &Path, split_by_field: SplitByField, records_per_fi
             writer.encode(headers.clone()).unwrap();
         }
         for record in records_set.into_iter() {
-            writer.write_bytes(record.into_iter()).unwrap();
+            writer.write(record.into_iter()).unwrap();
         }
         file_number += 1;
     }
@@ -240,11 +240,11 @@ mod test{
         assert!(Path::new("tmp_test/tmp_test.csv-p2.csv").exists());
         assert!(Path::new("tmp_test/tmp_test.csv-p3.csv").exists());
         assert!(Path::new("tmp_test/tmp_test.csv-p4.csv").exists());
-        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p0.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na|b|c\na7|b1|c7\n")
-        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p1.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na8|b2|c8\na25|b3|c25\na26|b3|c26\na5|b3|c5\na9|b3|c9\n")
-        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p2.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na1|b5|c1\na4|b5|c4\n")
-        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p3.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na2|b6|c2\na6|b6|c6\n")
-        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p4.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na3|b7|c3\n")
+        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p0.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na|b|c\na7|b1|c7\n");
+        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p1.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na8|b2|c8\na25|b3|c25\na26|b3|c26\na5|b3|c5\na9|b3|c9\n");
+        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p2.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na1|b5|c1\na4|b5|c4\n");
+        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p3.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na2|b6|c2\na6|b6|c6\n");
+        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p4.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na3|b7|c3\n");
         rmdir_recursive(&Path::new("tmp_test")).unwrap();
     }
 }
