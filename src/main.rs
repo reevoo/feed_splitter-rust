@@ -140,7 +140,7 @@ fn main() {
             panic!("Please provide either -c or -i");
         },
         (true, _) => {
-            SplitByField::FieldIndex(from_str(matches.opt_str("i").unwrap().as_slice()).unwrap())
+            SplitByField::FieldIndex(matches.opt_str("i").unwrap().parse().unwrap())
         },
         (_, true) => {
             SplitByField::FieldName(matches.opt_str("c").unwrap())
