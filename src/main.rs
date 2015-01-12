@@ -1,9 +1,7 @@
-#![feature(phase)]
-
 extern crate csv;
-extern crate serialize;
 extern crate getopts;
-#[phase(plugin, link)] extern crate log;
+#[macro_use]
+extern crate log;
 
 
 use std::path::Path;
@@ -13,23 +11,23 @@ use getopts::{optopt,getopts, usage, reqopt, OptGroup};
 use std::ascii::AsciiExt;
 
 #[allow(dead_code)]
-const RECORDS_PER_FILE: uint = 1000;
-const DELIMETERS: [u8, ..3] = [b'|', b';', b'\t'];
+const RECORDS_PER_FILE: usize = 1000;
+const DELIMETERS: [u8; 3] = [b'|', b';', b'\t'];
 
-#[deriving(Show)]
+#[derive(Show)]
 struct Stats {
-    total_records: uint,
-    number_of_files: uint,
+    total_records: usize,
+    number_of_files: usize,
 }
 
 enum SplitByField {
     FieldName(String),
-    FieldIndex(uint)
+    FieldIndex(usize)
 }
 
 // Simple algorithm, copying what we have in ruby right now.
 fn detect_delimiter(data: &[u8]) -> u8 {
-    let mut delimiters_frequency : Vec<(u8, uint)> = DELIMETERS.iter().map(|&del| (del, data.iter().filter(|&&x| x == del).count())).collect();
+    let mut delimiters_frequency : Vec<(u8, usize)> = DELIMETERS.iter().map(|&del| (del, data.iter().filter(|&&x| x == del).count())).collect();
     delimiters_frequency.sort_by(|&(_, count), &(_, count2)| count2.cmp(&count));
     if delimiters_frequency[0].1 > 2 {
         delimiters_frequency[0].0
@@ -41,17 +39,17 @@ fn detect_delimiter(data: &[u8]) -> u8 {
 fn detect_csv_file_delimiter(path: &Path) -> u8{
     let mut f = File::open(path).ok().expect("Can't open file");
     // A bit tricky code: we're allocating buf on the stack here.
-    let mut buf : [u8, ..100] = unsafe {::std::mem::zeroed()};
+    let mut buf : [u8; 100] = [0; 100];
     let read_bytes = f.read_at_least(100, &mut buf).unwrap(); //trying to read 100 bytes to the buf.
     let delimiter = detect_delimiter(buf.slice_to(read_bytes)); //slicing the actual number of bytes read.
     info!("Detected delimiter: 0x{:x}", delimiter);
     delimiter
 }
 
-fn split_records<T: Clone + Ord>(mut records: Vec<Vec<T>>, records_per_file: uint, split_record_index: uint) -> Vec<Vec<Vec<T>>> {
+fn split_records<T: Clone + Ord>(mut records: Vec<Vec<T>>, records_per_file: usize, split_record_index: usize) -> Vec<Vec<Vec<T>>> {
     let mut splitted_records = vec!();
     let mut current_vec = vec!();
-    let mut current_file_records = 0u;
+    let mut current_file_records = 0us;
     let mut last_split_field_value = None;
     info!("Sorting...");
     records.sort_by(|rec1, rec2| rec1[split_record_index].cmp(&rec2[split_record_index]));
@@ -70,16 +68,16 @@ fn split_records<T: Clone + Ord>(mut records: Vec<Vec<T>>, records_per_file: uin
     splitted_records
 }
 
-fn split_file(csv_file_path: &Path, split_by_field: SplitByField, records_per_file: uint, delimiter: u8) -> Stats {
+fn split_file(csv_file_path: &Path, split_by_field: SplitByField, records_per_file: usize, delimiter: u8) -> Stats {
     let csv_file_name = csv_file_path.as_str().unwrap();
     let mut reader = csv::Reader::from_file(csv_file_path).delimiter(delimiter);
 
     let mut headers = None;
     let split_record_index = match split_by_field {
         SplitByField::FieldName(field_name) => {
-            let lower_field_name = field_name.to_ascii_lower();
+            let lower_field_name = field_name.to_ascii_uppercase();
             let headers_tmp = reader.headers().ok().expect("Can't read headers");
-            let pos =  headers_tmp.iter().position(|header| header.to_ascii_lower() == lower_field_name).expect(format!("Can't find header '{}' in the file", field_name).as_slice());
+            let pos =  headers_tmp.iter().position(|header| header.to_ascii_uppercase() == lower_field_name).expect(format!("Can't find header '{}' in the file", field_name).as_slice());
             headers  = Some(headers_tmp);
             pos
         },
@@ -96,7 +94,7 @@ fn split_file(csv_file_path: &Path, split_by_field: SplitByField, records_per_fi
     let splitted_records = split_records(records, records_per_file, split_record_index);
 
     info!("Writing...");
-    let mut file_number = 0u;
+    let mut file_number = 0us;
     for records_set in splitted_records.into_iter() {
         let mut writer = csv::Writer::from_file(&Path::new(format!("{}-p{}.csv", csv_file_name, file_number))).delimiter(delimiter);
         if headers.is_some(){
@@ -150,7 +148,7 @@ fn main() {
     let csv_file_path = &Path::new(csv_file_name);
     let delimiter = detect_csv_file_delimiter(csv_file_path);
     let stats = split_file(csv_file_path, split_field, RECORDS_PER_FILE, delimiter);
-    info!("{}", stats);
+    info!("{:?}", stats);
 }
 
 #[cfg(test)]
