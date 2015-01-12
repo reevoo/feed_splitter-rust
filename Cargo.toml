@@ -7,8 +7,6 @@ authors = ["Andrii Dmytrenko <andrey@reevoo.com>"]
 [dependencies.csv]
 git = "git://github.com/BurntSushi/rust-csv"
 
-[dependencies.getopts]
-version = "*"
-
-[dependencies.log]
-version = "*"
+[dependencies]
+getopts = "*"
+log = "*"
