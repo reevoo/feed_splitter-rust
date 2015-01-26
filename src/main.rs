@@ -38,10 +38,9 @@ fn detect_delimiter(data: &[u8]) -> u8 {
 
 fn detect_csv_file_delimiter(path: &Path) -> u8{
     let mut f = File::open(path).ok().expect("Can't open file");
-    // A bit tricky code: we're allocating buf on the stack here.
     let mut buf : [u8; 100] = [0; 100];
     let read_bytes = f.read_at_least(100, &mut buf).unwrap(); //trying to read 100 bytes to the buf.
-    let delimiter = detect_delimiter(buf.slice_to(read_bytes)); //slicing the actual number of bytes read.
+    let delimiter = detect_delimiter(&buf[0 .. read_bytes]); //slicing the actual number of bytes read.
     info!("Detected delimiter: 0x{:x}", delimiter);
     delimiter
 }
@@ -77,7 +76,7 @@ fn split_file(csv_file_path: &Path, split_by_field: SplitByField, records_per_fi
         SplitByField::FieldName(field_name) => {
             let lower_field_name = field_name.to_ascii_uppercase();
             let headers_tmp = reader.headers().ok().expect("Can't read headers");
-            let pos =  headers_tmp.iter().position(|header| header.to_ascii_uppercase() == lower_field_name).expect(format!("Can't find header '{}' in the file", field_name).as_slice());
+            let pos =  headers_tmp.iter().position(|header| header.to_ascii_uppercase() == lower_field_name).expect(&*format!("Can't find header '{}' in the file", field_name));
             headers  = Some(headers_tmp);
             pos
         },
