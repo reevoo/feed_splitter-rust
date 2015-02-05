@@ -1,20 +1,25 @@
+#![feature(io)]
+#![feature(core)]
+#![feature(path)]
+#![feature(std_misc)]
+
 extern crate csv;
 extern crate getopts;
 #[macro_use]
 extern crate log;
 
 
-use std::path::Path;
+use std::old_path::Path;
+use std::old_io::File;
 use std::os;
-use std::io::File;
-use getopts::{optopt,getopts, usage, reqopt, OptGroup};
+use getopts::Options;
 use std::ascii::AsciiExt;
 
 #[allow(dead_code)]
 const RECORDS_PER_FILE: usize = 1000;
 const DELIMETERS: [u8; 3] = [b'|', b';', b'\t'];
 
-#[derive(Show)]
+#[derive(Debug)]
 struct Stats {
     total_records: usize,
     number_of_files: usize,
@@ -107,21 +112,20 @@ fn split_file(csv_file_path: &Path, split_by_field: SplitByField, records_per_fi
     Stats { total_records: total_records, number_of_files: file_number+1 }
 }
 
-fn print_usage(opts: &[OptGroup]){
-    println!("{}", usage("feed_splitter-rust [OPTIONS] CSV_FILE", opts));
+fn print_usage(opts: &Options){
+    println!("{}", opts.usage("feed_splitter-rust [OPTIONS] CSV_FILE"));
 }
 
 #[allow(dead_code)]
 fn main() {
     let args = os::args();
 
-    let opts = [
-        optopt("i", "index", "use column index", "INDEX"),
-        optopt("c", "column", "use column name", "NAME"),
-        reqopt("f", "file", "csv file", "FILE")
-    ];
+    let mut opts = Options::new();
+    opts.optopt("i", "index", "use column index", "INDEX");
+    opts.optopt("c", "column", "use column name", "NAME");
+    opts.optopt("f", "file", "csv file", "FILE");
 
-    let matches = match getopts(args.tail(), &opts) {
+    let matches = match opts.parse(args.tail()) {
         Ok(m) => m,
         Err(f) => {
             print_usage(&opts);
@@ -152,9 +156,9 @@ fn main() {
 
 #[cfg(test)]
 mod test{
-    use std::io::fs::{File, mkdir, rmdir_recursive};
-    use std::io;
-    use std::io::fs::PathExtensions;
+    use std::old_io::fs::{File, mkdir, rmdir_recursive};
+    use std::old_io;
+    use std::old_io::fs::PathExtensions;
 
     #[test]
     fn test_detect_delimiter(){
@@ -223,7 +227,7 @@ mod test{
                     a8|b2|c8\n\
                     a9|b3|c9\n";
         rmdir_recursive(&Path::new("tmp_test"));
-        mkdir(&Path::new("tmp_test"), io::USER_RWX).unwrap();
+        mkdir(&Path::new("tmp_test"), old_io::USER_RWX).unwrap();
         let tmp_csv = Path::new("tmp_test/tmp_test.csv");
         {
             let mut f = File::create(&tmp_csv);
