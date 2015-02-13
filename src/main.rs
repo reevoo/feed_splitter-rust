@@ -1,5 +1,6 @@
 #![feature(io)]
-#![feature(core)]
+#![feature(os)]
+#![feature(collections)]
 #![feature(path)]
 #![feature(std_misc)]
 
@@ -117,6 +118,7 @@ fn print_usage(opts: &Options){
 }
 
 #[allow(dead_code)]
+#[allow(deprecated)]
 fn main() {
     let args = os::args();
 
