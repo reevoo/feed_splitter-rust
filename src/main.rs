@@ -1,8 +1,5 @@
-#![feature(io)]
-#![feature(os)]
-#![feature(collections)]
-#![feature(path)]
-#![feature(std_misc)]
+#![feature(old_io)]
+#![feature(old_path)]
 
 extern crate csv;
 extern crate getopts;
@@ -12,11 +9,9 @@ extern crate log;
 
 use std::old_path::Path;
 use std::old_io::File;
-use std::os;
 use getopts::Options;
 use std::ascii::AsciiExt;
 
-#[allow(dead_code)]
 const RECORDS_PER_FILE: usize = 1000;
 const DELIMETERS: [u8; 3] = [b'|', b';', b'\t'];
 
@@ -54,7 +49,7 @@ fn detect_csv_file_delimiter(path: &Path) -> u8{
 fn split_records<T: Clone + Ord>(mut records: Vec<Vec<T>>, records_per_file: usize, split_record_index: usize) -> Vec<Vec<Vec<T>>> {
     let mut splitted_records = vec!();
     let mut current_vec = vec!();
-    let mut current_file_records = 0us;
+    let mut current_file_records = 0usize;
     let mut last_split_field_value = None;
     info!("Sorting...");
     records.sort_by(|rec1, rec2| rec1[split_record_index].cmp(&rec2[split_record_index]));
@@ -99,7 +94,7 @@ fn split_file(csv_file_path: &Path, split_by_field: SplitByField, records_per_fi
     let splitted_records = split_records(records, records_per_file, split_record_index);
 
     info!("Writing...");
-    let mut file_number = 0us;
+    let mut file_number = 0usize;
     for records_set in splitted_records.into_iter() {
         let mut writer = csv::Writer::from_file(&Path::new(format!("{}-p{}.csv", csv_file_name, file_number))).delimiter(delimiter);
         if headers.is_some(){
@@ -118,16 +113,15 @@ fn print_usage(opts: &Options){
 }
 
 #[allow(dead_code)]
-#[allow(deprecated)]
 fn main() {
-    let args = os::args();
+    let args : Vec<_> = std::env::args().collect();
 
     let mut opts = Options::new();
     opts.optopt("i", "index", "use column index", "INDEX");
     opts.optopt("c", "column", "use column name", "NAME");
     opts.optopt("f", "file", "csv file", "FILE");
 
-    let matches = match opts.parse(args.tail()) {
+    let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
         Err(f) => {
             print_usage(&opts);
@@ -213,7 +207,6 @@ mod test{
     }
 
     #[test]
-    #[allow(unused_must_use)]
     fn test_split_file(){
         let data = "f1|f2|f3\n\
                     a|b|c\n\
@@ -228,7 +221,7 @@ mod test{
                     a7|b1|c7\n\
                     a8|b2|c8\n\
                     a9|b3|c9\n";
-        rmdir_recursive(&Path::new("tmp_test"));
+        rmdir_recursive(&Path::new("tmp_test")).unwrap_or(());
         mkdir(&Path::new("tmp_test"), old_io::USER_RWX).unwrap();
         let tmp_csv = Path::new("tmp_test/tmp_test.csv");
         {
@@ -243,11 +236,11 @@ mod test{
         assert!(Path::new("tmp_test/tmp_test.csv-p2.csv").exists());
         assert!(Path::new("tmp_test/tmp_test.csv-p3.csv").exists());
         assert!(Path::new("tmp_test/tmp_test.csv-p4.csv").exists());
-        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p0.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na|b|c\na7|b1|c7\n");
-        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p1.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na8|b2|c8\na25|b3|c25\na26|b3|c26\na5|b3|c5\na9|b3|c9\n");
-        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p2.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na1|b5|c1\na4|b5|c4\n");
-        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p3.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na2|b6|c2\na6|b6|c6\n");
-        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p4.csv")).read_to_string().unwrap().as_slice(), "f1|f2|f3\na3|b7|c3\n");
+        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p0.csv")).read_to_string().unwrap(), "f1|f2|f3\na|b|c\na7|b1|c7\n");
+        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p1.csv")).read_to_string().unwrap(), "f1|f2|f3\na8|b2|c8\na25|b3|c25\na26|b3|c26\na5|b3|c5\na9|b3|c9\n");
+        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p2.csv")).read_to_string().unwrap(), "f1|f2|f3\na1|b5|c1\na4|b5|c4\n");
+        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p3.csv")).read_to_string().unwrap(), "f1|f2|f3\na2|b6|c2\na6|b6|c6\n");
+        assert_eq!(File::open(&Path::new("tmp_test/tmp_test.csv-p4.csv")).read_to_string().unwrap(), "f1|f2|f3\na3|b7|c3\n");
         rmdir_recursive(&Path::new("tmp_test")).unwrap();
     }
 }
