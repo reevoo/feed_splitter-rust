@@ -1,5 +1,4 @@
 #![feature(path_ext)]
-
 extern crate csv;
 extern crate getopts;
 #[macro_use]
@@ -119,7 +118,7 @@ fn main() {
     let mut opts = Options::new();
     opts.optopt("i", "index", "use column index", "INDEX");
     opts.optopt("c", "column", "use column name", "NAME");
-    opts.optopt("f", "file", "csv file", "FILE");
+    opts.reqopt("f", "file", "csv file", "FILE");
 
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
@@ -151,7 +150,7 @@ fn main() {
 }
 
 #[cfg(test)]
-mod test{
+mod test {
     use std::fs::{File, remove_dir_all, create_dir};
     use std::path::Path;
     use std::io::{Read, Write};
