@@ -1,14 +1,13 @@
 # Feed splitter in rust
 
-1. Install rust:
+1. Build project:
 	```
-	curl -s https://static.rust-lang.org/rustup.sh | sudo sh
+	docker build .
+	docker run -v /Users/robinbortlik/reevoo/feed_splitter-rust:/app -it 16c7f43bccab sh
+	source $HOME/.cargo/env
+	cargo +nightly build
 	```
-2. Build project:
-	```
-	cargo build --release
-	```
-3. Run:
+2. Run:
 	```
 	./target/release/feed_splitter-rust  path_to_csv_file
 	```

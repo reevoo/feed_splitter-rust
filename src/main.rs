@@ -6,7 +6,6 @@ extern crate log;
 
 
 use getopts::Options;
-use std::ascii::AsciiExt;
 use std::fs::File;
 use std::path::Path;
 use std::io::Read;
@@ -69,7 +68,7 @@ fn split_records<T: Clone + Ord>(mut records: Vec<Vec<T>>, records_per_file: usi
 
 fn split_file(csv_file_path: &Path, split_by_field: SplitByField, records_per_file: usize, delimiter: u8) -> Stats {
     let csv_file_name = csv_file_path.to_str().unwrap();
-    let mut reader = csv::Reader::from_file(csv_file_path).unwrap().delimiter(delimiter);
+    let mut reader = csv::Reader::from_path(csv_file_path).unwrap().delimiter(delimiter);
 
     let mut headers = None;
     let split_record_index = match split_by_field {
@@ -95,7 +94,7 @@ fn split_file(csv_file_path: &Path, split_by_field: SplitByField, records_per_fi
     info!("Writing...");
     let mut file_number = 0usize;
     for records_set in splitted_records.into_iter() {
-        let mut writer = csv::Writer::from_file(&Path::new(&format!("{}-p{}.csv", csv_file_name, file_number))).unwrap().delimiter(delimiter);
+        let mut writer = csv::Writer::from_path(&Path::new(&format!("{}-p{}.csv", csv_file_name, file_number))).unwrap().delimiter(delimiter);
         if headers.is_some(){
             writer.encode(headers.clone()).unwrap();
         }
